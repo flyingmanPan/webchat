@@ -2,7 +2,7 @@
 var express = require('express');
 var socket = require('socket.io');
 var fs = require('fs');
-
+var CryptoJS = require("crypto-js");
 
 var config=JSON.parse(fs.readFileSync('config.json'));
 

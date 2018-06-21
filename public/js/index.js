@@ -1,7 +1,7 @@
-"use strict";
 const msg = document.getElementById('message');
 var app = angular.module('webchat', []);
-
+checkCookies();
+var key=getCookie('key');
 app.controller('myCtrl', function($scope) {
     $scope.data = []; //接收-消息队列
     $scope.name = '';
@@ -9,11 +9,22 @@ app.controller('myCtrl', function($scope) {
     $scope.personnum = 0;
     $scope.personlist = [];
     $scope.flag = false;
-    const socket_url = 'http://211.159.187.254';
+    const socket_url = 'http://localhost';
     var pl = angular.element(document.getElementById('person_list'));
 
     var socket = io(socket_url);
     socket.on('news', (data) => {
+        if(data.name!=='系统消息')
+        {
+            var decrypted=CryptoJS.AES.decrypt(
+                data.content,
+                CryptoJS.enc.Utf8.parse(key),{
+                    iv:CryptoJS.enc.Utf8.parse(key),
+                    mode:CryptoJS.mode.CBC,
+                    padding:CryptoJS.pad.Pkcs7
+            });
+            data.content = CryptoJS.enc.Utf8.stringify(decrypted);
+        }
         ($scope.data).push(data);
         $scope.$apply();
         msg.scrollTop = msg.scrollHeight;
@@ -21,6 +32,14 @@ app.controller('myCtrl', function($scope) {
 
     socket.on('history', (data) => {
         for(let x in data){
+            var decrypted=CryptoJS.AES.decrypt(
+                data[x].content,
+                CryptoJS.enc.Utf8.parse(key),{
+                iv:CryptoJS.enc.Utf8.parse(key),
+                mode:CryptoJS.mode.CBC,
+                padding:CryptoJS.pad.Pkcs7
+            });
+            data[x].content = CryptoJS.enc.Utf8.stringify(decrypted);
             ($scope.data).push(data[x]);
         }
         ($scope.data).push({content:'----------以上是历史消息-----------'});
@@ -34,13 +53,20 @@ app.controller('myCtrl', function($scope) {
     });
 
     $scope.sendMsg = (data = $scope.content)=>{
+        var encrypted=CryptoJS.AES.encrypt(data,
+            CryptoJS.enc.Utf8.parse(key),{
+                iv:CryptoJS.enc.Utf8.parse(key),
+            mode:CryptoJS.mode.CBC,
+            padding:CryptoJS.pad.Pkcs7
+        });
+        encrypted=encrypted.toString();
         var date = new Date();
         if (!$scope.flag){
             $scope.flag = true;
             socket.emit('setUserName', $scope.name);
         }
         if ($scope.content!='')
-            socket.emit('sendMsg', data);
+            socket.emit('sendMsg', encrypted);
         $scope.content='';
     };
 
@@ -62,3 +88,36 @@ app.controller('myCtrl', function($scope) {
         pl.addClass('flipInX');
     };
 });
+function getCookie(cname)
+{
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0; i<ca.length; i++) 
+    {
+        var c = ca[i].trim();
+        if (c.indexOf(name)==0)
+        {
+            return c.substring(name.length,c.length);
+        }
+    }
+    return "";
+}
+function checkCookies()
+{
+    var key=getCookie('key');
+    if(key==='')
+    {
+        key=prompt("Please enter your key:","");
+        if (key!="" && key!=null)
+        {
+            setCookie("key",key,2);
+        }
+    }
+}
+function setCookie(cname,cvalue,exdays)
+{
+    var d = new Date();
+    d.setTime(d.getTime()+(exdays*24*60*60*1000));
+    var expires = "expires="+d.toGMTString();
+    document.cookie = cname + "=" + cvalue + "; " + expires;
+}

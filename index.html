@@ -12,8 +12,8 @@
 		<div id="spread" ng-click="spread()">展开在线用户列表</div>
 		<div id="message">
 			<p class="animated fadeIn" ng-repeat="x in data" id="item">
-                <span ng-bind="x.name"></span>  <span ng-bind="x.time"></span> <br/>
-				<span ng-bind="x.content"></span><br/>
+                <span ng-bind="x.name" id="chat-name"></span>  <span ng-bind="x.time" id="chat-time"></span> <br/>
+				<span ng-bind="x.content" id="chat-content"></span><br/>
 			</p>
 		</div>
 		<div id="input">
@@ -31,5 +31,7 @@
 </body>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/angular/angular.min.js"></script>
+<script src="static/js/crypto/aes.js"></script>
+<script src="static/js/index.js"></script>
 <script src="static/js/index.js"></script>
 </html>
